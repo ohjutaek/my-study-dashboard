@@ -921,7 +921,7 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
           <span class="week-total" id="weekTotal"></span>
         </div>
         <div class="week-chart" id="weekWrap"><canvas id="weekChart" aria-label="최근 7일 집중 시간 차트" role="img"></canvas></div>
-        <p class="week-sample" id="weekSample" hidden>지난 날짜는 예시 값이에요. 집중 세션을 기록하면 그날부터 실제 값으로 바뀌어요.</p>
+        <p class="week-sample" id="weekSample" hidden>아직 집중 기록이 없어요. 집중 타이머를 끝내거나 세션 칸을 누르면 여기에 쌓여요.</p>
       </div>
       <p class="note">집중 타이머가 끝나면 자동으로 한 칸씩 채워져요. 칸을 눌러 직접 기록하거나 지울 수도 있어요.</p>
     </section></div>
@@ -2043,7 +2043,6 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
   // ---------- 최근 7일 집중 시간 차트 (Chart.js 혼합 차트) ----------
   var weekChart = null, weekCur = null;
   const DOW=['일','월','화','수','목','금','토'];
-  const WEEK_SAMPLE=[95,140,60,170,120,150];   // 기록이 없을 때만 쓰는 지난 6일 예시 값
   const dayKey = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 
   function weekData(){
@@ -2055,13 +2054,13 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
       if(i>0 && rec && rec.sessions && rec.sessions.length) realPast++;
       days.push({d,rec,i});
     }
-    const useSample = realPast===0;
+    const useSample = false;                      // 예시 값 없이 실제 기록만 표시
     const D={labels:[],dates:[],actual:[],goal:[],trend:[],sample:[],useSample};
     days.forEach(({d,rec,i},k)=>{
       D.labels.push(DOW[d.getDay()]);
       D.dates.push(`${d.getMonth()+1}월 ${d.getDate()}일 (${DOW[d.getDay()]})`);
       const isSample = useSample && i>0;
-      const v = isSample ? WEEK_SAMPLE[k] : (rec && rec.sessions ? rec.sessions.reduce((a,s)=>a+s.min,0) : 0);
+      const v = rec && rec.sessions ? rec.sessions.reduce((a,s)=>a+s.min,0) : 0;
       D.actual.push(v);
       D.goal.push(((rec && rec.goal) || study.goal) * minutesFor('focus'));
       D.sample.push(isSample);
@@ -2161,7 +2160,7 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
     weekChart.update();
     const sum=D.actual.reduce((a,b)=>a+b,0);
     $('weekTotal').textContent=`합계 ${sum}분 · 하루 평균 ${Math.round(sum/7)}분`;
-    $('weekSample').hidden=!D.useSample;
+    $('weekSample').hidden = sum>0;              // 기록이 하나도 없을 때만 안내
     $('weekChart').setAttribute('aria-label',
       '최근 7일 집중 시간: '+D.dates.map((d,i)=>`${d} ${D.actual[i]}분`).join(', '));
   }
