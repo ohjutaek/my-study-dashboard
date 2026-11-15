@@ -895,6 +895,45 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
 .in-modal .dial-center small{font-size:clamp(11px,1.5vh,15px);margin-top:4px}
 #analogCard.in-modal .row .btn{padding:12px 18px;font-size:15px}
 
+/* ---------- D-day + 미니 달력 (일정 칸) ---------- */
+.dday{border-radius:16px;padding:10px 14px;background:linear-gradient(145deg,rgba(242,185,107,.16),rgba(242,185,107,.04));
+  border:1px solid rgba(242,185,107,.3);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 8px 18px -12px rgba(0,0,0,.7)}
+.dday-view{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.dday-name{font-size:14px;color:var(--ink-2)}
+.dday-num{font-family:var(--mono);font-size:clamp(22px,3vh,30px);font-weight:400;color:var(--amber-soft);letter-spacing:.02em;
+  text-shadow:0 0 18px rgba(242,185,107,.45)}
+.dday-date{font-size:12px;color:var(--ink-3)}
+.dday-edit{margin-left:auto;align-self:center}
+.dday.empty .dday-view{align-items:center}
+.dday.empty .dday-name{color:var(--ink-3);font-size:13px}
+.dday-form{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:8px;align-items:center}
+.dday-form #ddayDateIn{grid-column:auto}
+.dday-form .dday-del{color:#F3C0AE}
+@media (max-width:520px){.dday-form{grid-template-columns:1fr 1fr}.dday-form #ddayNameIn{grid-column:1/-1}}
+.mini-cal{display:flex;flex-direction:column;gap:6px}
+.mc-nav{display:flex;align-items:center;justify-content:space-between}
+.mc-nav button{appearance:none;border:1px solid var(--line-soft);background:rgba(255,244,224,.06);color:var(--ink-2);width:28px;height:28px;border-radius:9px;cursor:pointer;font-size:16px;line-height:1}
+.mc-nav button:hover{background:rgba(255,244,224,.14);color:var(--ink)}
+.mc-nav .mc-label{width:auto;padding:0 12px;border-color:transparent;background:transparent;font-family:var(--display);font-size:15px;font-weight:700;color:var(--amber-soft)}
+.mc-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;text-align:center}
+.mc-wd{font-size:10.5px;color:var(--ink-3);padding-bottom:2px}
+.mc-wd:first-child{color:var(--danger)}
+.mc-day{appearance:none;position:relative;height:clamp(24px,3.6vh,36px);border-radius:8px;border:1px solid transparent;background:transparent;color:var(--ink-2);
+  font-family:var(--mono);font-size:12px;cursor:pointer;padding:0;display:grid;place-items:center}
+.mc-day:hover{background:rgba(255,244,224,.1);color:var(--ink)}
+.mc-day.sun{color:#E8A08A}
+.mc-day.today{background:var(--green);border-color:var(--green-glow);color:var(--ink);font-weight:600;box-shadow:0 0 14px -4px rgba(90,170,125,.8)}
+.mc-day.dday-mark{border-color:rgba(242,185,107,.7);color:var(--amber-soft)}
+.mc-day i{position:absolute;bottom:3px;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%}
+.mc-day.all-done i{background:#3FBF7F}
+.mc-day.pending i{background:var(--amber)}
+.mc-day.missed i{background:rgba(224,138,110,.9)}
+.today-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:10px;border-top:1px solid var(--line-soft);
+  font-size:12.5px;font-weight:600;letter-spacing:.12em;color:var(--ink-2)}
+.today-head .meta{font-weight:400;letter-spacing:.02em;color:var(--ink-3);font-size:12px}
+.in-modal .dday,.in-modal .mini-cal{display:none}
+.in-modal .today-head{border-top:0;padding-top:0}
+
 </style>
 
 <div class="scene" aria-hidden="true">
@@ -979,7 +1018,31 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
 
     <!-- Schedule -->
     <div class="slot"><section class="panel" id="schedCard" aria-labelledby="s-h">
-      <h2><button class="expand" id="s-h" data-open="schedCard">오늘 일정 <svg viewBox="0 0 12 12"><path d="M7 1h4v4M5 11H1V7M11 1 7 5M1 11l4-4"/></svg></button><span class="meta" id="todoMeta"></span></h2>
+      <h2><span class="expand" id="s-h">일정</span><span class="meta" id="ddayMeta"></span></h2>
+      <div class="dday" id="dday">
+        <div class="dday-view" id="ddayView">
+          <span class="dday-name" id="ddayName"></span>
+          <b class="dday-num" id="ddayNum"></b>
+          <span class="dday-date" id="ddayDate"></span>
+          <button class="btn small dday-edit" id="ddayEditBtn" type="button">D-day 설정</button>
+        </div>
+        <div class="dday-form" id="ddayForm" role="group" aria-label="D-day 설정" hidden>
+          <input class="field" id="ddayNameIn" type="text" maxlength="20" placeholder="시험 이름 (예: 수능)" aria-label="시험 이름">
+          <input class="field" id="ddayDateIn" type="date" aria-label="시험 날짜">
+          <button class="btn small primary" type="button" data-submit>저장</button>
+          <button class="btn small" type="button" id="ddayCancel">취소</button>
+          <button class="btn small dday-del" type="button" id="ddayDel" hidden>삭제</button>
+        </div>
+      </div>
+      <div class="mini-cal" id="miniCal">
+        <div class="mc-nav">
+          <button type="button" id="mcPrev" aria-label="이전 달">‹</button>
+          <button type="button" class="mc-label" id="mcLabel" title="큰 달력 열기"></button>
+          <button type="button" id="mcNext" aria-label="다음 달">›</button>
+        </div>
+        <div class="mc-grid" id="mcGrid"></div>
+      </div>
+      <div class="today-head"><button class="expand" data-open="schedCard">오늘 할 일 <svg viewBox="0 0 12 12"><path d="M7 1h4v4M5 11H1V7M11 1 7 5M1 11l4-4"/></svg></button><span class="meta" id="todoMeta"></span></div>
       <ul class="todo-list" id="todoList"></ul>
       <div class="add" id="addForm" role="group" aria-label="할 일 추가">
         <input class="field" id="todoTime" type="time" value="09:00" aria-label="시간">
@@ -2366,7 +2429,7 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
     if(!sel){ const t=new Date(); sel={y:t.getFullYear(),m:t.getMonth(),d:t.getDate()}; cal={year:sel.y,month:sel.m}; }
     renderCalendar(); renderCalDetail();
   }
-  function calRefresh(){ if(!$('calendarCard').classList.contains('in-modal')) return; renderCalendar(); renderCalDetail(); }
+  function calRefresh(){ if(miniReady) renderMini(); if(!$('calendarCard').classList.contains('in-modal')) return; renderCalendar(); renderCalDetail(); }
 
   function renderCalendar(){
     $('calLabel').textContent=`${cal.year}년 ${cal.month+1}월`;
@@ -2442,6 +2505,57 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
   });
   $('calPrev').onclick=()=>{ if(--cal.month<0){cal.month=11;cal.year--;} sel=null; renderCalendar(); renderCalDetail(); };
   $('calNext').onclick=()=>{ if(++cal.month>11){cal.month=0;cal.year++;} sel=null; renderCalendar(); renderCalDetail(); };
+
+  // ---------- 미니 달력 + D-day (일정 칸) ----------
+  var miniReady=false;
+  let mc={year:now0.getFullYear(),month:now0.getMonth()};
+  function getDday(){ const v=store.get('dday',null); return v && v.date ? v : null; }
+  function renderDday(){
+    const d=getDday(), box=$('dday');
+    box.classList.toggle('empty',!d);
+    $('ddayEditBtn').textContent = d ? '수정' : 'D-day 설정';
+    if(!d){ $('ddayName').textContent='🎯 시험 날짜를 정해 보세요'; $('ddayNum').textContent=''; $('ddayDate').textContent=''; $('ddayMeta').textContent=''; return; }
+    const [y,m,dd]=d.date.split('-').map(Number), t=new Date(); t.setHours(0,0,0,0);
+    const diff=Math.round((new Date(y,m-1,dd)-t)/86400000);
+    const lab = diff>0 ? 'D-'+diff : diff===0 ? 'D-DAY' : 'D+'+(-diff);
+    $('ddayName').textContent=(d.name||'시험')+'까지'; $('ddayNum').textContent=lab;
+    $('ddayDate').textContent=`${y}.${pad(m)}.${pad(dd)}`; $('ddayMeta').textContent=(d.name||'D-day')+' '+lab;
+  }
+  function ddayEdit(on){
+    $('ddayView').hidden=on; $('ddayForm').hidden=!on;
+    if(on){ const d=getDday(); $('ddayNameIn').value=d?d.name||'':''; $('ddayDateIn').value=d?d.date:''; $('ddayDel').hidden=!d; $('ddayNameIn').focus(); }
+  }
+  $('ddayEditBtn').onclick=()=>ddayEdit(true);
+  $('ddayCancel').onclick=()=>ddayEdit(false);
+  $('ddayDel').onclick=()=>{ store.set('dday',null); ddayEdit(false); renderDday(); renderMini(); };
+  onSubmit('ddayForm',()=>{
+    const date=$('ddayDateIn').value; if(!date){ $('ddayDateIn').focus(); return; }
+    store.set('dday',{name:$('ddayNameIn').value.trim(),date}); ddayEdit(false); renderDday(); renderMini();
+  });
+  function renderMini(){
+    $('mcLabel').textContent=`${mc.year}년 ${mc.month+1}월`;
+    const g=$('mcGrid'); g.innerHTML='';
+    WD.forEach(w=>{ const c=document.createElement('div'); c.className='mc-wd'; c.textContent=w; g.appendChild(c); });
+    const first=new Date(mc.year,mc.month,1).getDay(), days=new Date(mc.year,mc.month+1,0).getDate();
+    for(let i=0;i<first;i++) g.appendChild(document.createElement('div'));
+    const dd=getDday();
+    for(let d=1;d<=days;d++){
+      const key=dKey(mc.year,mc.month,d), b=document.createElement('button'); b.type='button';
+      const list=dayTodos(key), total=list.length, done=list.filter(t=>t.done).length;
+      let st=''; if(total) st = done===total ? ' all-done' : key<curDay ? ' missed' : ' pending';
+      const wd=(first+d-1)%7;
+      b.className='mc-day'+(key===curDay?' today':'')+(wd===0?' sun':'')+(dd&&dd.date===key?' dday-mark':'')+st;
+      b.innerHTML=d+(total?'<i></i>':'');
+      b.title=`${mc.month+1}월 ${d}일`+(total?` · 일정 ${done}/${total} 완료`:'')+(dd&&dd.date===key?` · ${dd.name||'D-day'}`:'');
+      b.onclick=()=>{ sel={y:mc.year,m:mc.month,d}; cal={year:mc.year,month:mc.month}; openModal($('calendarCard')); };
+      g.appendChild(b);
+    }
+  }
+  $('mcPrev').onclick=()=>{ if(--mc.month<0){mc.month=11;mc.year--;} renderMini(); };
+  $('mcNext').onclick=()=>{ if(++mc.month>11){mc.month=0;mc.year++;} renderMini(); };
+  $('mcLabel').onclick=()=>{ const t=new Date(); if(mc.year===t.getFullYear()&&mc.month===t.getMonth()){ openModal($('calendarCard')); } else { mc={year:t.getFullYear(),month:t.getMonth()}; renderMini(); } };
+  miniReady=true; renderDday(); renderMini();
+  setInterval(()=>{ if(miniReady){ renderDday(); } }, 60*60*1000);
 
   // ---------- memo ----------
   const loadMemo=()=>store.get('memo','');
