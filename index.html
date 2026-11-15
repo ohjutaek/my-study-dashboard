@@ -888,6 +888,13 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
   #ambView .amb-play{width:38px;height:38px}
 }
 
+/* 아날로그 타이머 팝업: 화면 크기에 맞춰 크게 */
+.modal:has(#analogCard){max-width:min(860px,94vw);max-height:94vh}
+.in-modal .dial{width:min(68vh,84vw,700px)}
+.in-modal .dial-center{width:28%;height:28%;font-size:clamp(20px,4.4vh,42px)}
+.in-modal .dial-center small{font-size:clamp(11px,1.5vh,15px);margin-top:4px}
+#analogCard.in-modal .row .btn{padding:12px 18px;font-size:15px}
+
 </style>
 
 <div class="scene" aria-hidden="true">
