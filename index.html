@@ -2138,7 +2138,9 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
       return {id, list, start};
     }
     function embedSrc(c){
-      const q=new URLSearchParams({autoplay:'1',rel:'0',playsinline:'1',modestbranding:'1'});
+      // autoplay를 쓰지 않는다: YouTube는 자동 재생된 퍼가기 영상을 조회수로 세지 않기 때문.
+      // 사용자가 플레이어의 ▶를 직접 한 번 누르게 하면 조회수에 포함된다.
+      const q=new URLSearchParams({rel:'0',playsinline:'1',modestbranding:'1'});
       if(c.list) q.set('list',c.list);
       if(c.start) q.set('start',String(c.start));
       return `https://www.youtube.com/embed/${c.id||'videoseries'}?${q}`;
@@ -2207,7 +2209,10 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
           : `영상을 재생하지 못했어요(오류 ${code}). 아래 버튼을 누르면 YouTube에서 재생돼요.`);
         return;
       }
-      if(!f.dataset.ok){ f.dataset.ok='1'; $('ytNow').textContent=`재생 중 · ${current.author}`; }
+      if(!f.dataset.ok){ f.dataset.ok='1'; $('ytNow').textContent=`▶ 를 눌러 재생 · ${current.author}`; }
+      const st = d.event==='onStateChange' ? d.info : (d.info && typeof d.info.playerState==='number' ? d.info.playerState : null);
+      if(st===1) $('ytNow').textContent=`재생 중 · ${current.author}`;
+      else if(st===2) $('ytNow').textContent=`일시정지 · ${current.author}`;
     });
     function pick(key){ sel=key; current=PRESETS[key]; store.set('yt-sel',key); marks(); load(); }
 
@@ -2218,6 +2223,9 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
     });
 
     document.querySelectorAll('.yt-btn').forEach(b=>b.addEventListener('click',()=>pick(b.dataset.yt)));
+    const ensurePlayer=()=>{ if(!$('ytView').hidden && !frame.querySelector('iframe,.yt-blocked')) load(); };
+    $('tabYt').addEventListener('click',()=>setTimeout(ensurePlayer,0));
+    setTimeout(ensurePlayer,0);
     poster.addEventListener('click',load);
     onSubmit('ytForm',()=>{
       const r=parseLink($('ytUrl').value);
