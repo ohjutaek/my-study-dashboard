@@ -1125,7 +1125,7 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
       </div>
       <div class="snd-view" id="ytView" role="tabpanel" aria-labelledby="tabYt" hidden>
         <div class="yt-presets">
-          <button class="yt-btn" data-yt="lofi"><span class="e" aria-hidden="true">🎧</span><span class="t"><b>Lofi Hip Hop</b><small>Lofi Girl 24/7</small></span></button>
+          <button class="yt-btn" data-yt="exam"><span class="e" aria-hidden="true">📚</span><span class="t"><b>시험기간 초집중</b><small>공부 플레이리스트</small></span></button>
           <button class="yt-btn" data-yt="jazz"><span class="e" aria-hidden="true">☕</span><span class="t"><b>Jazz &amp; Coffee</b><small>카페 재즈 BGM</small></span></button>
           <button class="yt-btn" data-yt="classic"><span class="e" aria-hidden="true">🎻</span><span class="t"><b>Classic Library</b><small>도서관 클래식</small></span></button>
           <button class="yt-btn" data-yt="rain"><span class="e" aria-hidden="true">🌧️</span><span class="t"><b>Rain &amp; Piano</b><small>빗소리와 피아노</small></span></button>
@@ -2107,13 +2107,13 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
   // ---------- YouTube BGM 플레이어 ----------
   (function(){
     const PRESETS={
-      lofi:   {id:'jfKfPfyJRdk', title:'lofi hip hop radio 📚 beats to relax/study to', author:'Lofi Girl'},
+      exam:   {id:'ugRxqY0LIhw', title:'[PlayList] 시험기간 초집중 공부 플레이리스트', author:'공부 플레이리스트'},
       jazz:   {id:'fEvM-OUbaKs', title:'Coffee Jazz Music · 24/7 Live Stream', author:'BGM channel'},
       classic:{id:'Wr8JeaJqPcY', title:'Classical Music at the Library · Study Ambience', author:'Infinity Rooms'},
       rain:   {id:'k7LhdJPUTQ0', title:'Rainy Day · Relaxing Piano Music with Soft Rain', author:'Soothing Relaxation'}
     };
     const frame=$('ytFrame'), poster=$('ytPoster');
-    let sel=store.get('yt-sel','lofi'); if(!PRESETS[sel]) sel='lofi';
+    let sel=store.get('yt-sel','exam'); if(!PRESETS[sel]) sel='exam';
     let current=PRESETS[sel], blocked=false;
 
     const ID=/^[A-Za-z0-9_-]{11}$/;
