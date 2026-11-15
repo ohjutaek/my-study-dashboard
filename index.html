@@ -1039,8 +1039,9 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
       <div class="alarm-row">
         <label class="switch"><input type="checkbox" id="alarmOn" checked> 🔔 완료 알람</label>
         <div class="alarm-kinds" role="radiogroup" aria-label="알람 소리">
-          <button class="mx-chip" data-alarm="clock" role="radio" aria-checked="true">⏰ 탁상시계</button>
-          <button class="mx-chip" data-alarm="chime" role="radio" aria-checked="false">🎐 차임벨</button>
+          <button class="mx-chip" data-alarm="soft" role="radio" aria-checked="true">🎵 마림바</button>
+          <button class="mx-chip" data-alarm="chime" role="radio" aria-checked="false">✨ 맑은 차임</button>
+          <button class="mx-chip" data-alarm="digital" role="radio" aria-checked="false">📱 디지털</button>
         </div>
         <button class="btn small" id="alarmTest">미리 듣기</button>
         <button class="btn small primary alarm-stop" id="alarmStop" hidden>🔕 알람 끄기</button>
@@ -1416,11 +1417,11 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
   function reset(){ pause(); total=minutesFor(mode)*60; remaining=total; render(); }
   function setMode(m){ mode=m; $('tabFocus').setAttribute('aria-selected',m==='focus'); $('tabRest').setAttribute('aria-selected',m==='rest'); reset(); }
   // ---------- 타이머 완료 알람 (2회 재생) ----------
-  // 1순위: 무료 알람 음원 URL / 불러오지 못하면(아티팩트 화면 등) Web Audio로 직접 만든 벨소리로 대신 울린다.
-  const ALARM_URL='https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg';
+  // 외부 음원 없이 Web Audio로 직접 만든다 (마림바 / 맑은 차임 / 디지털). 짧은 잔향을 더해 자연스럽게.
   const ALARM_REPEAT=2;
-  var alarmAC=null, alarmEl=null, alarmTimers=[], alarmOuts=[], ringing=false, alarmUrlOk=null;   // var: render()에서도 안전하게 참조
-  let alarmKind=store.get('alarm-kind','clock'), alarmOn=store.get('alarm-on',true);
+  var alarmAC=null, alarmTimers=[], alarmOuts=[], ringing=false, alarmVerb=null;   // var: render()에서도 안전하게 참조
+  let alarmKind=store.get('alarm-kind','soft'), alarmOn=store.get('alarm-on',true);
+  if(!['soft','chime','digital'].includes(alarmKind)) alarmKind = alarmKind==='chime' ? 'chime' : 'soft';
   function alarmCtx(){   // 사용자가 버튼을 누를 때 미리 깨워 두면, 나중에 타이머가 끝날 때 소리가 막히지 않는다
     try{
       if(!alarmAC) alarmAC=new (window.AudioContext||window.webkitAudioContext)();
@@ -1428,49 +1429,48 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
     }catch(e){}
     return alarmAC;
   }
-  function bellStrike(t,f,v,out){          // 탁상시계 종 한 번 (비정수배 배음)
-    [[1,1],[2.41,.5],[3.93,.3],[5.4,.18]].forEach(([m,a])=>{
-      const o=alarmAC.createOscillator(), g=alarmAC.createGain(); o.frequency.value=f*m;
-      g.gain.setValueAtTime(v*a,t); g.gain.exponentialRampToValueAtTime(.0004,t+.35/Math.sqrt(m));
-      o.connect(g); g.connect(out); o.start(t); o.stop(t+.4);
+  function verb(){            // 작은 방 잔향 (노이즈로 만든 임펄스 응답)
+    if(alarmVerb) return alarmVerb;
+    const ac=alarmAC, len=Math.floor(ac.sampleRate*1.6), ir=ac.createBuffer(2,len,ac.sampleRate);
+    for(let c=0;c<2;c++){ const d=ir.getChannelData(c); for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3); }
+    const cv=ac.createConvolver(); cv.buffer=ir; const wet=ac.createGain(); wet.gain.value=.28; cv.connect(wet); wet.connect(ac.destination);
+    return alarmVerb=cv;
+  }
+  function note(out,t,f,v,decay,partials,type){
+    partials.forEach(([m,a,dk])=>{
+      const o=alarmAC.createOscillator(), g=alarmAC.createGain(); o.type=type||'sine'; o.frequency.value=f*m;
+      g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(v*a,t+.006); g.gain.exponentialRampToValueAtTime(.0001,t+decay*(dk||1));
+      o.connect(g); g.connect(out); o.start(t); o.stop(t+decay*(dk||1)+.05);
     });
   }
   function synthOnce(t0,kind){             // 한 번 울리는 길이(초)를 돌려준다
-    const out=alarmAC.createGain(); out.gain.value=.9; out.connect(alarmAC.destination); alarmOuts.push(out);
-    if(kind==='chime'){
-      [1318.5,1046.5,1174.7,784,  784,1174.7,1318.5,1046.5].forEach((f,i)=>{   // 웨스트민스터풍 차임
-        const t=t0+i*.34, o=alarmAC.createOscillator(), o2=alarmAC.createOscillator(), g=alarmAC.createGain();
-        o.frequency.value=f; o2.frequency.value=f*2.01; o2.type='sine';
-        g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.22,t+.015); g.gain.exponentialRampToValueAtTime(.0001,t+1.1);
-        const g2=alarmAC.createGain(); g2.gain.value=.25; o2.connect(g2); g2.connect(g);
-        o.connect(g); g.connect(out); o.start(t); o2.start(t); o.stop(t+1.15); o2.stop(t+1.15);
-      });
-      return 3.6;
+    const out=alarmAC.createGain(); out.gain.value=.9; out.connect(alarmAC.destination); out.connect(verb()); alarmOuts.push(out);
+    if(kind==='chime'){                    // 맑은 유리 종: 위로 올라가는 아르페지오
+      const bell=[[1,1,1],[2.76,.35,.6],[5.4,.15,.35],[8.93,.06,.25]];
+      [1318.5,1661.2,1975.5,2637].forEach((f,i)=>note(out,t0+i*.18,f,.16,2.2,bell));
+      note(out,t0+.95,2637,.08,2.4,bell);
+      return 2.6;
     }
-    // 빈티지 탁상시계: 두 개의 종을 망치가 빠르게 번갈아 치는 소리 (따르르릉)
-    const dur=1.8;
-    for(let t=0,k=0;t<dur;t+=0.045,k++){
-      const burstGap = (t%0.6)>0.48;        // 따르릉-따르릉 사이의 짧은 쉼
-      if(!burstGap) bellStrike(t0+t, k%2? 2093:1865, .16, out);
+    if(kind==='digital'){                  // 휴대폰 타이머 같은 부드러운 '삐삐삐삐'
+      const lp=alarmAC.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3500; lp.connect(out);
+      for(let i=0;i<4;i++){
+        const t=t0+i*.16, o=alarmAC.createOscillator(), g=alarmAC.createGain(); o.type='square'; o.frequency.value=1760;
+        g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.07,t+.008); g.gain.setValueAtTime(.07,t+.08); g.gain.exponentialRampToValueAtTime(.0001,t+.1);
+        o.connect(g); g.connect(lp); o.start(t); o.stop(t+.12);
+      }
+      return .9;
     }
-    return dur;
+    // 부드러운 마림바: 도-미-솔-도
+    const mar=[[1,1,1],[4,.22,.25],[10,.05,.12]];
+    [[523.25,0],[659.25,.2],[783.99,.4],[1046.5,.6]].forEach(([f,dt],i)=>note(out,t0+dt,f,i===3?.3:.24,i===3?1.4:.9,mar));
+    return 1.7;
   }
   function playSynth(kind){
     if(!alarmCtx()) return;
     let t=alarmAC.currentTime+.05;
-    for(let i=0;i<ALARM_REPEAT;i++){ t+=synthOnce(t,kind)+.5; }
-    const total=(t-alarmAC.currentTime)*1000;
+    for(let i=0;i<ALARM_REPEAT;i++){ t+=synthOnce(t,kind)+.45; }
+    const total=(t-alarmAC.currentTime)*1000+800;
     alarmTimers.push(setTimeout(stopAlarm,total));
-  }
-  function playUrl(){
-    let count=0;
-    alarmEl=new Audio(ALARM_URL); alarmEl.preload='auto';
-    const fail=()=>{ if(!ringing) return; alarmUrlOk=false; alarmEl=null; playSynth('clock'); };
-    alarmEl.addEventListener('ended',()=>{ count++; if(count<ALARM_REPEAT && ringing){ alarmEl.currentTime=0; alarmEl.play().catch(fail); } else stopAlarm(); });
-    alarmEl.addEventListener('error',fail,{once:true});
-    alarmEl.addEventListener('playing',()=>{ alarmUrlOk=true; },{once:true});
-    alarmEl.play().catch(fail);
-    alarmTimers.push(setTimeout(()=>{ if(ringing && alarmEl && alarmEl.paused && alarmUrlOk!==true) fail(); },2500));   // 로딩이 너무 늦으면 대체음
   }
   function ringUI(on){
     $('display').classList.toggle('ringing',on);
@@ -1480,11 +1480,10 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
   function playAlarm(force){
     if(!alarmOn && !force) return;
     stopAlarm(); ringing=true; ringUI(true);
-    if(alarmKind==='clock' && alarmUrlOk!==false) playUrl(); else playSynth(alarmKind);
+    playSynth(alarmKind);
   }
   function stopAlarm(){
     alarmTimers.forEach(clearTimeout); alarmTimers=[];
-    if(alarmEl){ try{ alarmEl.pause(); }catch(e){} alarmEl=null; }
     alarmOuts.forEach(o=>{ try{ o.disconnect(); }catch(e){} }); alarmOuts=[];   // 예약된 벨소리까지 즉시 끊기
     if(ringing){ ringing=false; ringUI(false); render(); }
   }
@@ -1740,21 +1739,21 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
   });
   renderTodos();
 
-  // ---------- ambient sound mixer (Web Audio, 실시간 합성) ----------
+  // ---------- ambient sound mixer (Web Audio, 실시간 합성: 빗소리·파도·시냇물·노이즈) ----------
   (function(){
     const CH=[
-      {id:'rain',    emoji:'🌧️', name:'창가 빗소리',     en:'Rain',        desc:'창밖에 잔잔하게 내리는 비'},
-      {id:'writing', emoji:'📝', name:'연필 필기소리',   en:'Writing',     desc:'종이 위를 스치는 연필'},
-      {id:'pages',   emoji:'📖', name:'책장 넘기는 소리', en:'Page Turn',  desc:'천천히 책장을 넘기는 소리'},
-      {id:'fire',    emoji:'🔥', name:'벽난로 장작소리', en:'Fireplace',   desc:'타닥타닥 타는 장작'},
-      {id:'wind',    emoji:'🌲', name:'숲속 새벽바람',   en:'Forest Wind', desc:'나뭇잎을 흔드는 새벽바람'},
-      {id:'clock',   emoji:'🕰️', name:'빈티지 시계 소리', en:'Clock',      desc:'똑딱이는 오래된 벽시계'}
+      {id:'rain',   emoji:'🌧️', name:'빗소리',       en:'Rain',        desc:'지붕과 창을 두드리는 잔잔한 비'},
+      {id:'waves',  emoji:'🌊', name:'파도 소리',    en:'Ocean Waves', desc:'밀려왔다 부서지는 바닷가 파도'},
+      {id:'stream', emoji:'🏞️', name:'시냇물',       en:'Stream',      desc:'돌 사이를 흐르는 맑은 물소리'},
+      {id:'white',  emoji:'🌫️', name:'백색소음',     en:'White Noise', desc:'주변 소음을 덮어 주는 부드러운 쉬―'},
+      {id:'brown',  emoji:'🟤', name:'브라운 노이즈', en:'Brown Noise', desc:'낮고 묵직해 몰입에 좋은 소음'},
+      {id:'fan',    emoji:'🌀', name:'선풍기 소리',   en:'Fan',         desc:'일정하게 도는 선풍기 바람'}
     ];
     const PRESETS=[
-      {name:'비 오는 도서관', mix:{rain:.7, pages:.4, clock:.3}},
-      {name:'겨울 서재',     mix:{pages:.55, fire:.6, clock:.2}},
-      {name:'새벽 산장',     mix:{wind:.6, fire:.4, rain:.25}},
-      {name:'조용한 필기',   mix:{writing:.6, pages:.3, clock:.3}}
+      {name:'깊은 몰입',   mix:{brown:.65, rain:.35}},
+      {name:'비 오는 밤',  mix:{rain:.75, fan:.25}},
+      {name:'바닷가',      mix:{waves:.75, white:.12}},
+      {name:'숲속 시냇물', mix:{stream:.65, rain:.2}}
     ];
     const R=Math.random;
     const josa=w=>{ const c=w.charCodeAt(w.length-1)-0xAC00; return (c>=0&&c<=11171&&c%28)?'이':'가'; };
@@ -1782,7 +1781,7 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
     const cache={};
     function noise(type){
       if(cache[type]) return cache[type];
-      const sr=ac.sampleRate, len=sr*6, N=Math.floor(sr*.25), buf=ac.createBuffer(2,len,sr);
+      const sr=ac.sampleRate, len=sr*10, N=Math.floor(sr*.5), buf=ac.createBuffer(2,len,sr);
       for(let ch=0;ch<2;ch++){
         const a=new Float32Array(len+N); let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0,last=0;
         for(let i=0;i<len+N;i++){
@@ -1804,7 +1803,7 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
         let node=s;
         (filters||[]).forEach(([t,f,q])=>{ const b=ac.createBiquadFilter(); b.type=t; b.frequency.value=f; if(q) b.Q.value=q; node.connect(b); node=b; });
         const g=ac.createGain(); g.gain.value=gain; node.connect(g); g.connect(dest);
-        s.start(0,R()*5); T.srcs.push(s);
+        s.start(0,R()*9); T.srcs.push(s);
         return {s,g,f:node===s?null:node};
       };
       T.loop=(fn,min,max)=>{ const go=()=>{ if(T.dead) return; fn(); setTimeout(go,min+R()*(max-min)); }; setTimeout(go,R()*min); };
@@ -1827,159 +1826,82 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
       o.connect(g); g.connect(dest); o.start(t); o.stop(t+d+.02);
     }
 
+    // 자연스러운 소리를 위해: 스테레오로 서로 다른 노이즈, 천천히 변하는 세기(LFO), 무작위 이벤트를 섞는다
+    function drift(T,param,lo,hi,minMs,maxMs,tc){ T.loop(()=>param.setTargetAtTime(lo+R()*(hi-lo),ac.currentTime,tc||1.5),minMs,maxMs); }
+    function lfo(T,param,rate,depth){
+      const o=ac.createOscillator(), g=ac.createGain(); o.frequency.value=rate; g.gain.value=depth;
+      o.connect(g); g.connect(param); o.start(); T.srcs.push(o);
+    }
     const BUILD={
       rain(bus,T){
-        T.src('pink',bus,.32,[['highpass',500],['lowpass',7000]]);
-        T.src('brown',bus,.55,[['lowpass',500]]);
-        T.src('white',bus,.05,[['highpass',6000]]);
-        const drop=()=>burst(pan(bus,R()*1.6-.8),{f:1800+R()*4500,q:2+R()*6,d:.015+R()*.05,v:.12+R()*.35});
-        T.loop(()=>{ drop(); if(R()<.5) drop(); },25,90);
-        // 유리창에 맺혔다 떨어지는 큰 방울
-        T.loop(()=>burst(pan(bus,R()*1.2-.6),{f:700+R()*600,q:3,d:.08,v:.35}),600,2200);
+        // 넓게 깔린 빗줄기 + 지붕의 낮은 울림 + 가까운 빗방울
+        const sheet=T.src('pink',bus,.30,[['highpass',450],['lowpass',6500,.4]]);
+        const roof=T.src('brown',bus,.45,[['lowpass',420]]);
+        T.src('white',bus,.035,[['highpass',7000]]);
+        drift(T,sheet.g.gain,.22,.38,3000,7000,2.5);              // 빗발이 약해졌다 굵어졌다
+        drift(T,roof.g.gain,.35,.55,4000,9000,3);
+        const drop=(near)=>burst(pan(bus,R()*1.8-.9),{f:near?900+R()*900:2200+R()*4200,q:near?2.5:3+R()*5,d:near?.05+R()*.05:.012+R()*.035,v:near?.18+R()*.18:.05+R()*.16});
+        T.loop(()=>{ drop(false); if(R()<.6) drop(false); },18,70);
+        T.loop(()=>drop(true),350,1400);                          // 처마에서 떨어지는 굵은 방울
       },
-      writing(bus,T){
-        // 종이 위 연필: 부드러운 핑크 노이즈 + 종이 결(저주파로 흔들리는 거친 질감) + 획마다 속도 곡선
-        const out=pan(bus,.12);
-        const desk=ac.createBiquadFilter(); desk.type='lowshelf'; desk.frequency.value=500; desk.gain.value=4; desk.connect(out);
-        const soft=ac.createBiquadFilter(); soft.type='lowpass'; soft.frequency.value=3200; soft.Q.value=.3; soft.connect(desk);
-        // 종이 결 모듈레이터: 연속된 저역 노이즈를 획의 음량에 곱한다
-        const grainSrc=ac.createBufferSource(); grainSrc.buffer=noise('white'); grainSrc.loop=true;
-        const grainLp=ac.createBiquadFilter(); grainLp.type='lowpass'; grainLp.frequency.value=90;
-        const grainAmt=ac.createGain(); grainAmt.gain.value=4.5;
-        grainSrc.connect(grainLp); grainLp.connect(grainAmt); grainSrc.start(0,R()*5); T.srcs.push(grainSrc);
-        T.src('pink',bus,.006,[['lowpass',900]]);          // 조용한 방
-        const curve=(n,bumps)=>{ const c=new Float32Array(n);
-          for(let i=0;i<n;i++){ const x=i/(n-1); let v=Math.pow(Math.sin(Math.PI*x),1.1);
-            v*=1+bumps*Math.sin(x*Math.PI*(2+R()*3)+R()*6)*.18; c[i]=Math.max(0,v); }
-          c[0]=0; c[n-1]=0; return c; };
-        const stroke=(len,level)=>{
-          const t=ac.currentTime+.01, d=len, v=level;
-          const s=ac.createBufferSource(); s.buffer=noise('pink');
-          const hp=ac.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=380+R()*160; hp.Q.value=.4;
-          const pk=ac.createBiquadFilter(); pk.type='peaking'; pk.frequency.value=1300+R()*700; pk.Q.value=.6; pk.gain.value=3;
+      waves(bus,T){
+        // 먼 바다의 웅웅거림 위로, 파도가 차오르고(쏴아) 부서진 뒤 거품이 빠지는(스르르) 과정을 반복
+        T.src('brown',bus,.16,[['lowpass',300]]);
+        const wave=()=>{
+          if(T.dead) return;
+          const t=ac.currentTime+.05, rise=2.2+R()*1.6, fall=4+R()*3, peak=.55+R()*.35, side=pan(bus,R()*.8-.4);
+          const body=ac.createBufferSource(); body.buffer=noise('brown');
           const lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.Q.value=.3;
-          const top=2600+R()*900;                       // 획 가운데(속도 빠른 구간)에서 더 밝게
-          lp.frequency.setValueAtTime(1500,t); lp.frequency.linearRampToValueAtTime(top,t+d*.5); lp.frequency.linearRampToValueAtTime(1600,t+d);
-          const env=ac.createGain(); env.gain.value=0;
-          const c=curve(24,1); for(let i=0;i<c.length;i++) c[i]*=v;
-          env.gain.setValueCurveAtTime(c,t,d);
-          const grain=ac.createGain(); grain.gain.value=.7; grainAmt.connect(grain.gain);
-          s.connect(hp); hp.connect(pk); pk.connect(lp); lp.connect(env); env.connect(grain); grain.connect(soft);
-          s.start(t,R()*5,d+.05);
-          setTimeout(()=>{ try{ grainAmt.disconnect(grain.gain); }catch(e){} },(d+.2)*1000);
+          lp.frequency.setValueAtTime(250,t); lp.frequency.linearRampToValueAtTime(1400+R()*600,t+rise); lp.frequency.exponentialRampToValueAtTime(320,t+rise+fall);
+          const g=ac.createGain(); g.gain.setValueAtTime(.0001,t);
+          g.gain.exponentialRampToValueAtTime(peak,t+rise); g.gain.exponentialRampToValueAtTime(.0001,t+rise+fall);
+          body.connect(lp); lp.connect(g); g.connect(side); body.start(t,R()*9,rise+fall+.1);
+          const foam=ac.createBufferSource(); foam.buffer=noise('pink');                   // 부서지는 거품
+          const hp=ac.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=1800;
+          const fg=ac.createGain(); fg.gain.setValueAtTime(.0001,t+rise*.7);
+          fg.gain.exponentialRampToValueAtTime(.09+R()*.05,t+rise+.3); fg.gain.exponentialRampToValueAtTime(.0001,t+rise+fall*.9);
+          foam.connect(hp); hp.connect(fg); fg.connect(side); foam.start(t+rise*.7,R()*9,fall+rise*.4);
+          setTimeout(wave,(rise+fall*.55+R()*2.5)*1000);
         };
-        const dot=()=>{   // 점 찍기: 짧은 톡 + 책상 울림
-          const t=ac.currentTime+.01;
-          burst(soft,{f:1500,q:.8,d:.03,v:.08,attack:.004,start:t});
-          const o=ac.createOscillator(), g=ac.createGain(); o.frequency.value=170+R()*40;
-          g.gain.setValueAtTime(.035,t); g.gain.exponentialRampToValueAtTime(.0005,t+.07);
-          o.connect(g); g.connect(desk); o.start(t); o.stop(t+.06);
-        };
-        const word=()=>{
-          if(T.dead) return;
-          const k=2+Math.floor(R()*6); let acc=0;
-          for(let i=0;i<k;i++){
-            const r=R();
-            if(r<.08){ T.later(dot,acc); acc+=90+R()*80; }
-            else { const len=r>.93 ? .35+R()*.35 : .08+R()*.16;      // 가끔 긴 밑줄 획
-                   T.later(()=>stroke(len,.16+R()*.08),acc); acc+=len*1000*(.7+R()*.3)+40+R()*80; }
-          }
-          const pause=R()<.16 ? 1600+R()*2800 : 220+R()*450;           // 문장 끝 / 단어 사이
-          setTimeout(word,acc+pause);
-        };
-        word();
+        wave(); T.later(wave,2500+R()*2000);
       },
-      pages(bus,T){
-        // 책장 넘기기: 종이를 드는 사각거림 → 공기를 가르는 바스락 → 내려앉는 톡
-        T.src('pink',bus,.008,[['lowpass',1200]]);           // 조용한 서재
-        const room=ac.createBiquadFilter(); room.type='lowpass'; room.frequency.value=6500; room.connect(bus);
-        const rustle=(t,d,v,f1,f2,rough,dest)=>{
-          const s=ac.createBufferSource(); s.buffer=noise('pink');
-          const hp=ac.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=350;
-          const bp=ac.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=.7;
-          bp.frequency.setValueAtTime(f1,t); bp.frequency.exponentialRampToValueAtTime(f2,t+d);
-          const g=ac.createGain(); g.gain.value=0;
-          const n=48, c=new Float32Array(n);
-          for(let i=0;i<n;i++){ const x=i/(n-1); const env=Math.pow(Math.sin(Math.PI*Math.pow(x,.8)),1.2);
-            c[i]=v*env*(1-rough+rough*R()); }                   // 종이 구김결
-          c[0]=0; c[n-1]=0;
-          g.gain.setValueCurveAtTime(c,t,d);
-          s.connect(hp); hp.connect(bp); bp.connect(g); g.connect(dest); s.start(t,R()*5,d+.05);
+      stream(bus,T){
+        // 졸졸 흐르는 물: 고음 물살 + 작은 거품이 터지는 소리(위로 미끄러지는 짧은 음)
+        const flow=T.src('pink',bus,.10,[['bandpass',1100,.45]]);
+        T.src('white',bus,.028,[['highpass',3500],['lowpass',9000]]);
+        T.src('brown',bus,.10,[['lowpass',250]]);
+        drift(T,flow.g.gain,.07,.13,1500,4000,1);
+        const bubble=()=>{
+          const t=ac.currentTime+.01, f=500+Math.pow(R(),2)*1800, d=.02+R()*.05, out=pan(bus,R()*1.6-.8);
+          const o=ac.createOscillator(), g=ac.createGain(); o.type='sine';
+          o.frequency.setValueAtTime(f,t); o.frequency.exponentialRampToValueAtTime(f*(1.4+R()*.8),t+d);
+          g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.025+R()*.04,t+.004); g.gain.exponentialRampToValueAtTime(.0005,t+d);
+          o.connect(g); g.connect(out); o.start(t); o.stop(t+d+.02);
         };
-        const flap=(t,v,dest)=>{
-          const s=ac.createBufferSource(); s.buffer=noise('brown');
-          const lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=420+R()*200;
-          const g=ac.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+.006); g.gain.exponentialRampToValueAtTime(.001,t+.09);
-          s.connect(lp); lp.connect(g); g.connect(dest); s.start(t,R()*5,.12);
-        };
-        const turn=(speed=1)=>{
-          const t=ac.currentTime+.02, side=pan(room,R()*.6-.1);
-          const lift=(.12+R()*.1)/speed, sweep=(.28+R()*.22)/speed;
-          rustle(t,lift,.05+R()*.03,1800,2600,.55,side);                   // 모서리를 집어 드는 소리
-          rustle(t+lift*.7,sweep,.16+R()*.08,1200+R()*400,3200+R()*1200,.35,side);   // 넘어가는 바스락
-          flap(t+lift*.7+sweep*.92,.22+R()*.12,side);                         // 내려앉는 소리
-          rustle(t+lift*.7+sweep*.9,.12,.04,2200,1400,.4,side);               // 종이가 자리 잡는 소리
-        };
-        const handle=()=>{ const t=ac.currentTime+.02; rustle(t,.25+R()*.3,.025+R()*.02,1500,2000,.6,pan(room,R()*.6-.3)); };
-        const go=()=>{
-          if(T.dead) return;
-          if(R()<.18){ const n=2+Math.floor(R()*3); for(let i=0;i<n;i++) T.later(()=>turn(1.4+R()*.4),i*(420+R()*260)); }   // 여러 장 훑어보기
-          else turn(1);
-          setTimeout(go,5000+R()*11000);
-        };
-        T.later(go,400);
-        T.loop(handle,3000,9000);                           // 책을 고쳐 잡는 작은 소리
+        T.loop(()=>{ bubble(); if(R()<.45) T.later(bubble,10+R()*40); },25,110);
       },
-      fire(bus,T){
-        const roar=T.src('brown',bus,.5,[['lowpass',260]]);
-        T.src('pink',bus,.025,[['bandpass',3500,.6]]);
-        T.loop(()=>roar.g.gain.setTargetAtTime(.32+R()*.32,ac.currentTime,.4),400,1200);
-        const crack=big=>burst(pan(bus,R()*1.2-.6), big
-          ? {f:800+R()*1500,q:1.2,d:.04+R()*.07,v:.45+R()*.4,attack:.001}
-          : {f:2000+R()*5000,q:3,d:.004+R()*.012,v:.15+R()*.3,attack:.0008});
-        T.loop(()=>{ const n=1+Math.floor(R()*4); for(let i=0;i<n;i++) T.later(()=>crack(false),R()*120); },60,420);
-        T.loop(()=>{ crack(true); if(R()<.35) T.later(()=>crack(true),40+R()*90); },900,3500);
+      white(bus,T){
+        // 귀가 덜 피곤하도록 고역을 살짝 깎은 백색소음
+        T.src('white',bus,.30,[['lowpass',8500,.5],['highpass',60]]);
       },
-      wind(bus,T){
-        const wind=T.src('pink',bus,.18,[['bandpass',420,.5]]);
-        const whistle=T.src('pink',bus,.02,[['bandpass',1400,6]]);
-        const leaves=T.src('pink',bus,.02,[['highpass',3000]]);
-        T.loop(()=>{
-          const t=ac.currentTime, d=3+R()*5, k=R();
-          wind.g.gain.setTargetAtTime(.08+k*.28,t,d/3);
-          wind.f.frequency.setTargetAtTime(280+k*450,t,d/3);
-          whistle.g.gain.setTargetAtTime(.004+k*.03,t,d/3);
-          whistle.f.frequency.setTargetAtTime(900+R()*1200,t,d/2);
-          leaves.g.gain.setTargetAtTime(.01+k*.05,t,d/3);
-        },2500,6000);
-        // 멀리서 가끔 우는 새벽 새
-        const bird=()=>{
-          const t=ac.currentTime+.05, lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=2600; lp.connect(pan(bus,R()*1.6-.8));
-          const b=2400+R()*2000, v=.025+R()*.02;
-          tone(lp,t,b,b*1.05,.18,v); tone(lp,t+.26,b*.78,b*.8,.26,v*.9);
-        };
-        T.loop(bird,5000,14000);
+      brown(bus,T){
+        const b=T.src('brown',bus,.95,[['lowpass',800],['highpass',30]]);
+        drift(T,b.g.gain,.85,1,4000,9000,3);                      // 아주 느린 숨결
       },
-      clock(bus,T){
-        // 나무 케이스 울림: 짧은 딜레이 피드백
-        const dl=ac.createDelay(), fb=ac.createGain(), lp=ac.createBiquadFilter();
-        dl.delayTime.value=.043; fb.gain.value=.32; lp.type='lowpass'; lp.frequency.value=2400;
-        dl.connect(lp); lp.connect(fb); fb.connect(dl); lp.connect(bus);
-        T.clean.push(()=>{ try{ fb.disconnect(); dl.disconnect(); lp.disconnect(); }catch(e){} });
-        T.src('brown',bus,.03,[['lowpass',300]]);
-        const tick=(t,hi)=>{
-          const g=burst(bus,{f:hi?3300:2500,q:9,d:.03,v:.9,attack:.0008,start:t}); g.connect(dl);
-          const o=ac.createOscillator(), og=ac.createGain(); o.frequency.value=hi?1850:1380;
-          og.gain.setValueAtTime(.07,t); og.gain.exponentialRampToValueAtTime(.0005,t+.07);
-          o.connect(og); og.connect(bus); og.connect(dl); o.start(t); o.stop(t+.09);
-        };
-        let next=ac.currentTime+.15, k=0;
-        const sched=()=>{ if(T.dead) return; while(next<ac.currentTime+.6){ tick(next,k%2===0); next+=1; k++; } setTimeout(sched,200); };
-        sched();
+      fan(bus,T){
+        // 바람 + 모터의 낮은 웅 소리 + 날개가 공기를 가르는 아주 옅은 주기적 흔들림
+        const air=T.src('pink',bus,.34,[['lowpass',1300,.4],['highpass',90]]);
+        T.src('brown',bus,.30,[['lowpass',260]]);
+        lfo(T,air.g.gain,6.5,.035);
+        [[96,.010],[192,.004],[288,.0015]].forEach(([f,v])=>{
+          const o=ac.createOscillator(), g=ac.createGain(); o.frequency.value=f*(1+R()*.01); g.gain.value=v;
+          o.connect(g); g.connect(bus); o.start(); T.srcs.push(o);
+        });
       }
     };
 
-    const chGain=id=>Math.pow(mix[id].vol,1.6)*1.1;
+    const LEVEL={rain:1, waves:1.4, stream:4.2, white:1.7, brown:.62, fan:1.55};   // 같은 슬라이더 위치에서 비슷한 크기로 들리도록 보정
+    const chGain=id=>Math.pow(mix[id].vol,1.6)*1.1*(LEVEL[id]||1);
     function startCh(id){
       if(live[id] || !ctx()) return;
       const bus=ac.createGain(); bus.gain.value=0; bus.connect(master);
