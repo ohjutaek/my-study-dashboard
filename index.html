@@ -1365,10 +1365,10 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
   function renderAnalog(text){
     const totalMin=total/60, max=totalMin<=60 ? 60 : Math.ceil(totalMin/30)*30;
     buildLabels(max);
-    const elapsed=Math.max(0,Math.min(total,total-remaining)), r=72;
-    const goalDeg=totalMin/max*360, nowDeg=elapsed/60/max*360;
-    $('pieGoal').setAttribute('d',sector(goalDeg,r));      // 설정한 시간 구간 (목표 지점까지)
-    $('pieWedge').setAttribute('d',sector(nowDeg,r));      // 실제로 흐른 시간
+    const left=Math.max(0,Math.min(total,remaining)), r=72;
+    const goalDeg=totalMin/max*360, nowDeg=left/60/max*360;
+    $('pieGoal').setAttribute('d',sector(goalDeg,r));      // 설정한 시간 구간 (처음 크기, 점선)
+    $('pieWedge').setAttribute('d',sector(nowDeg,r));      // 남은 시간: 설정 시간에서 시작해 0으로 줄어든다
     const [gx,gy]=ccw(Math.min(goalDeg,359.95),r+10), [gx2,gy2]=ccw(Math.min(goalDeg,359.95),r-4);
     const gm=$('goalMark'); gm.setAttribute('x1',gx2); gm.setAttribute('y1',gy2); gm.setAttribute('x2',gx); gm.setAttribute('y2',gy);
     const [hx,hy]=ccw(nowDeg,r);
