@@ -931,8 +931,22 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
 .today-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:10px;border-top:1px solid var(--line-soft);
   font-size:12.5px;font-weight:600;letter-spacing:.12em;color:var(--ink-2)}
 .today-head .meta{font-weight:400;letter-spacing:.02em;color:var(--ink-3);font-size:12px}
-.in-modal .dday,.in-modal .mini-cal{display:none}
-.in-modal .today-head{border-top:0;padding-top:0}
+/* 가운데 칸: D-day / 달력 / 오늘 할 일 을 각각 떠 있는 카드로 */
+.slot-stack{flex-direction:column;gap:16px}
+.slot-stack > .panel{flex:0 0 auto}
+.slot-stack > #schedCard{flex:1 1 auto;min-height:0}
+#ddayCard{padding:14px 18px;background:linear-gradient(150deg,rgba(242,185,107,.22),rgba(242,185,107,.06) 60%,rgba(20,10,5,.12));
+  border-color:rgba(242,185,107,.35)}
+#ddayCard .dday{padding:0;background:none;border:0;box-shadow:none}
+@media (min-width:1100px) and (min-height:600px){
+  .slot-stack{gap:14px}
+  #ddayCard{padding:12px 16px;overflow:visible}
+  #miniCalCard{overflow:visible}
+}
+@media (min-width:1100px) and (min-height:600px) and (max-height:860px){
+  .slot-stack{gap:10px}
+  #ddayCard{padding:9px 13px}
+}
 
 </style>
 
@@ -1017,8 +1031,8 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
     </section></div>
 
     <!-- Schedule -->
-    <div class="slot"><section class="panel" id="schedCard" aria-labelledby="s-h">
-      <h2><span class="expand" id="s-h">일정</span><span class="meta" id="ddayMeta"></span></h2>
+    <div class="slot slot-stack">
+    <section class="panel" id="ddayCard" aria-label="D-day">
       <div class="dday" id="dday">
         <div class="dday-view" id="ddayView">
           <span class="dday-name" id="ddayName"></span>
@@ -1034,22 +1048,28 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
           <button class="btn small dday-del" type="button" id="ddayDel" hidden>삭제</button>
         </div>
       </div>
+    </section>
+    <section class="panel" id="miniCalCard" aria-labelledby="mc-h">
+      <h2><button class="expand" id="mc-h" type="button">달력 <svg viewBox="0 0 12 12"><path d="M7 1h4v4M5 11H1V7M11 1 7 5M1 11l4-4"/></svg></button><span class="meta">날짜를 누르면 그날 일정</span></h2>
       <div class="mini-cal" id="miniCal">
         <div class="mc-nav">
           <button type="button" id="mcPrev" aria-label="이전 달">‹</button>
-          <button type="button" class="mc-label" id="mcLabel" title="큰 달력 열기"></button>
+          <button type="button" class="mc-label" id="mcLabel" title="이번 달로"></button>
           <button type="button" id="mcNext" aria-label="다음 달">›</button>
         </div>
         <div class="mc-grid" id="mcGrid"></div>
       </div>
-      <div class="today-head"><button class="expand" data-open="schedCard">오늘 할 일 <svg viewBox="0 0 12 12"><path d="M7 1h4v4M5 11H1V7M11 1 7 5M1 11l4-4"/></svg></button><span class="meta" id="todoMeta"></span></div>
+    </section>
+    <section class="panel" id="schedCard" aria-labelledby="s-h">
+      <h2><button class="expand" id="s-h" data-open="schedCard">오늘 할 일 <svg viewBox="0 0 12 12"><path d="M7 1h4v4M5 11H1V7M11 1 7 5M1 11l4-4"/></svg></button><span class="meta" id="todoMeta"></span></h2>
       <ul class="todo-list" id="todoList"></ul>
       <div class="add" id="addForm" role="group" aria-label="할 일 추가">
         <input class="field" id="todoTime" type="time" value="09:00" aria-label="시간">
         <input class="field" id="todoText" type="text" placeholder="할 일 추가" aria-label="할 일">
         <button class="btn primary" type="button" data-submit>추가</button>
       </div>
-    </section></div>
+    </section>
+    </div>
 
     <!-- Ambient sound -->
     <div class="slot"><section class="panel" id="musicCard" aria-labelledby="m-h">
@@ -2514,12 +2534,12 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
     const d=getDday(), box=$('dday');
     box.classList.toggle('empty',!d);
     $('ddayEditBtn').textContent = d ? '수정' : 'D-day 설정';
-    if(!d){ $('ddayName').textContent='🎯 시험 날짜를 정해 보세요'; $('ddayNum').textContent=''; $('ddayDate').textContent=''; $('ddayMeta').textContent=''; return; }
+    if(!d){ $('ddayName').textContent='🎯 시험 날짜를 정해 보세요'; $('ddayNum').textContent=''; $('ddayDate').textContent=''; return; }
     const [y,m,dd]=d.date.split('-').map(Number), t=new Date(); t.setHours(0,0,0,0);
     const diff=Math.round((new Date(y,m-1,dd)-t)/86400000);
     const lab = diff>0 ? 'D-'+diff : diff===0 ? 'D-DAY' : 'D+'+(-diff);
     $('ddayName').textContent=(d.name||'시험')+'까지'; $('ddayNum').textContent=lab;
-    $('ddayDate').textContent=`${y}.${pad(m)}.${pad(dd)}`; $('ddayMeta').textContent=(d.name||'D-day')+' '+lab;
+    $('ddayDate').textContent=`${y}.${pad(m)}.${pad(dd)}`;
   }
   function ddayEdit(on){
     $('ddayView').hidden=on; $('ddayForm').hidden=!on;
@@ -2553,7 +2573,8 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
   }
   $('mcPrev').onclick=()=>{ if(--mc.month<0){mc.month=11;mc.year--;} renderMini(); };
   $('mcNext').onclick=()=>{ if(++mc.month>11){mc.month=0;mc.year++;} renderMini(); };
-  $('mcLabel').onclick=()=>{ const t=new Date(); if(mc.year===t.getFullYear()&&mc.month===t.getMonth()){ openModal($('calendarCard')); } else { mc={year:t.getFullYear(),month:t.getMonth()}; renderMini(); } };
+  $('mcLabel').onclick=()=>{ const t=new Date(); mc={year:t.getFullYear(),month:t.getMonth()}; renderMini(); };
+  $('mc-h').onclick=()=>{ sel={y:mc.year,m:mc.month,d:(mc.year===now0.getFullYear()&&mc.month===now0.getMonth())?now0.getDate():1}; cal={year:mc.year,month:mc.month}; openModal($('calendarCard')); };
   miniReady=true; renderDday(); renderMini();
   setInterval(()=>{ if(miniReady){ renderDday(); } }, 60*60*1000);
 
