@@ -826,9 +826,21 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
   #ambView .mx-toggle small{display:none}
   #ambView > .amb-vol{flex:1 1 0}
   #ambView > .amb-foot{flex:0 0 auto;margin-top:0}
-  #ytView{gap:8px}
+  #ytView:not([hidden]){display:grid;gap:8px;grid-template-columns:minmax(0,1fr) auto;
+    grid-template-rows:auto auto minmax(64px,1fr) auto auto;
+    grid-template-areas:"presets presets" "chan open" "frame frame" "custom custom" "note note"}
+  #ytView > .yt-presets{grid-area:presets}
+  #ytView > .yt-channels{grid-area:chan}
+  #ytView > .yt-meta{grid-area:open;display:flex;align-items:center}
+  #ytView > .yt-meta #ytNow{display:none}
+  #ytView > .yt-frame{grid-area:frame}
+  #ytView > .yt-custom{grid-area:custom;margin-top:0}
+  #ytView > .yt-note{grid-area:note}
+  #ytView .yt-btn .e{display:none}
+  #ytView .yt-btn{padding:8px 12px;min-height:0}
   #ytView .yt-presets{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-  #ytView .yt-frame{aspect-ratio:auto;height:clamp(110px,20vh,240px)}
+  #ytView .yt-frame{aspect-ratio:auto;height:auto;min-height:64px}
+  #ytView .yt-presets .yt-btn small{display:none}
 }
 /* 1100~1440px 노트북: 사운드가 있는 왼쪽 칸을 넓혀 타일 글자가 줄바꿈되지 않게 */
 @media (min-width:1100px) and (max-width:1440px) and (min-height:600px){
@@ -947,6 +959,11 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
   .slot-stack{gap:10px}
   #ddayCard{padding:9px 13px}
 }
+
+/* YouTube 추천 채널 바로가기 */
+.yt-channels{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.yt-channels .yc-label{font-size:12px;color:var(--ink-3);margin-right:2px}
+.yt-channels .yc{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 
 </style>
 
@@ -1112,6 +1129,11 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
           <button class="yt-btn" data-yt="jazz"><span class="e" aria-hidden="true">☕</span><span class="t"><b>Jazz &amp; Coffee</b><small>카페 재즈 BGM</small></span></button>
           <button class="yt-btn" data-yt="classic"><span class="e" aria-hidden="true">🎻</span><span class="t"><b>Classic Library</b><small>도서관 클래식</small></span></button>
           <button class="yt-btn" data-yt="rain"><span class="e" aria-hidden="true">🌧️</span><span class="t"><b>Rain &amp; Piano</b><small>빗소리와 피아노</small></span></button>
+        </div>
+        <div class="yt-channels" aria-label="추천 채널 바로가기">
+          <span class="yc-label">추천 채널</span>
+          <a class="mx-chip yc" href="https://www.youtube.com/@%EB%8B%AC%EB%B9%9B%EC%9C%84" target="_blank" rel="noopener">🌙 달빛위 ↗</a>
+          <a class="mx-chip yc" href="https://www.youtube.com/@DeepFocusFlow-m3l" target="_blank" rel="noopener">🎧 Deep Focus Flow ↗</a>
         </div>
         <div class="yt-frame" id="ytFrame">
           <button class="yt-poster" id="ytPoster" aria-label="선택한 영상 재생">
