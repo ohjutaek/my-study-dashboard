@@ -782,9 +782,9 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
   header.top{margin-bottom:10px;flex:0 0 auto}
   .live-bar{flex:0 0 auto;margin-bottom:12px}
   .grid{flex:1 1 auto;min-height:0;gap:16px;
-        grid-template-columns:minmax(0,1.05fr) minmax(0,1.1fr) minmax(0,1fr);
+        grid-template-columns:minmax(0,1.25fr) minmax(0,.9fr) minmax(0,.95fr);
         grid-template-rows:auto minmax(0,1fr);
-        grid-template-areas:"timer sound study" "sched sound study"}
+        grid-template-areas:"timer sched study" "sound sched study"}
   .grid > .slot{min-height:0}
   .grid > .slot:nth-child(1){grid-area:timer}
   .grid > .slot:nth-child(2){grid-area:sched}
@@ -803,9 +803,36 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
   .mixer{grid-template-columns:repeat(3,minmax(0,1fr))}
   .week-chart{min-height:140px}
 }
-/* 1100~1440px 노트북: 사운드 칸을 넓혀 타일 글자가 줄바꿈되지 않게 */
+/* 넓은 화면: 왼쪽 아래 사운드 칸을 촘촘하게 (스크롤 없이 보이도록) */
+@media (min-width:1100px) and (min-height:600px){
+  .live-bar{padding:8px 14px}
+  .display{min-height:clamp(88px,12vh,140px)}
+  .digits{font-size:clamp(46px,6.4vh,76px)}
+  #timerCard{gap:10px}
+  #musicCard{gap:10px}
+  #musicCard .snd-tab{padding:5px 10px}
+  #musicCard .snd-switch{padding:4px}
+  #ambView:not([hidden]){display:flex;flex-direction:row;flex-wrap:wrap;align-content:flex-start;gap:10px}
+  #ambView > *{flex:1 1 100%;min-width:0}
+  #ambView > .amb-hint,#ambView .amb-viz{display:none}
+  #ambView > .amb-now{flex:0 1 auto;gap:10px}
+  #ambView > .mx-presets{flex:1 1 0;justify-content:flex-end;align-self:center}
+  #ambView .amb-play{width:44px;height:44px}
+  #ambView .amb-play svg{width:18px;height:18px}
+  #ambView .now-sub{display:none}
+  #ambView .mixer{gap:8px}
+  #ambView .mx{padding:8px 9px 9px;gap:6px}
+  #ambView .mx-toggle .e{width:30px;height:30px;font-size:16px;border-radius:10px}
+  #ambView .mx-toggle small{display:none}
+  #ambView > .amb-vol{flex:1 1 0}
+  #ambView > .amb-foot{flex:0 0 auto;margin-top:0}
+  #ytView{gap:8px}
+  #ytView .yt-presets{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+  #ytView .yt-frame{aspect-ratio:auto;height:clamp(110px,20vh,240px)}
+}
+/* 1100~1440px 노트북: 사운드가 있는 왼쪽 칸을 넓혀 타일 글자가 줄바꿈되지 않게 */
 @media (min-width:1100px) and (max-width:1440px) and (min-height:600px){
-  .grid{grid-template-columns:minmax(0,1fr) minmax(0,1.35fr) minmax(0,.85fr)}
+  .grid{grid-template-columns:minmax(0,1.4fr) minmax(0,.85fr) minmax(0,.85fr)}
 }
 /* 세로가 낮은 노트북 화면은 조금 더 촘촘하게 */
 @media (min-width:1100px) and (min-height:600px) and (max-height:820px){
@@ -816,6 +843,31 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
   .display{min-height:96px}
   .digits{font-size:clamp(44px,7vh,64px)}
 }
+/* 세로가 낮은 화면(노트북)에서 한 화면에 들어가도록 추가로 압축 */
+@media (min-width:1100px) and (min-height:600px) and (max-height:860px){
+  .app{padding-block:10px 12px}
+  header.top{margin-bottom:6px}
+  .brand{font-size:21px}
+  .brand small{display:none}
+  .icon-btn{width:36px;height:36px}
+  .clock{font-size:17px;padding:3px 12px}
+  .clock span{display:none}
+  .live-bar{padding:5px 12px;margin-bottom:10px}
+  .grid{gap:10px}
+  .grid .panel{padding:11px 13px 12px;gap:8px}
+  #timerCard{gap:8px}
+  .tab{padding:6px 10px}
+  .display{min-height:clamp(70px,10vh,96px)}
+  .digits{font-size:clamp(40px,6vh,56px)}
+  .row .btn{padding:7px 14px}
+  .alarm-row{padding-top:8px}
+  #musicCard{gap:8px}
+  #ambView:not([hidden]){gap:8px}
+  #ambView .mx{padding:6px 8px 7px;gap:4px}
+  #ambView .mx-toggle .e{width:26px;height:26px;font-size:14px}
+  #ambView .amb-play{width:38px;height:38px}
+}
+
 </style>
 
 <div class="scene" aria-hidden="true">
