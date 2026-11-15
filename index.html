@@ -1126,7 +1126,7 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
       <div class="snd-view" id="ytView" role="tabpanel" aria-labelledby="tabYt" hidden>
         <div class="yt-presets">
           <button class="yt-btn" data-yt="exam"><span class="e" aria-hidden="true">📚</span><span class="t"><b>시험기간 초집중</b><small>공부 플레이리스트</small></span></button>
-          <button class="yt-btn" data-yt="sunny"><span class="e" aria-hidden="true">☀️</span><span class="t"><b>Sunny Morning</b><small>12분 집중 · 가사 없음</small></span></button>
+          <button class="yt-btn" data-yt="sunny"><span class="e" aria-hidden="true">☀️</span><span class="t"><b>몰입 집중 모드</b><small>가사 없음 · 반복 재생</small></span></button>
           <button class="yt-btn" data-yt="jazz"><span class="e" aria-hidden="true">☕</span><span class="t"><b>Jazz &amp; Coffee</b><small>카페 재즈 BGM</small></span></button>
           <button class="yt-btn" data-yt="rain"><span class="e" aria-hidden="true">🌧️</span><span class="t"><b>Rain &amp; Piano</b><small>빗소리와 피아노</small></span></button>
         </div>
@@ -2108,7 +2108,7 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
   (function(){
     const PRESETS={
       exam:   {id:'ugRxqY0LIhw', title:'[PlayList] 시험기간 초집중 공부 플레이리스트', author:'공부 플레이리스트'},
-      sunny:  {id:'6DZFpatA5XY', title:'Study Music - Sunny Morning Focus Session (12 Minutes, No Lyrics)', author:'공부 음악 · 12분'},
+      sunny:  {id:'6DZFpatA5XY', title:'몰입 집중 모드 · 가사 없는 공부 음악', author:'12분 · 반복 재생', loop:true},
       jazz:   {id:'fEvM-OUbaKs', title:'Coffee Jazz Music · 24/7 Live Stream', author:'BGM channel'},
       rain:   {id:'k7LhdJPUTQ0', title:'Rainy Day · Relaxing Piano Music with Soft Rain', author:'Soothing Relaxation'}
     };
@@ -2143,6 +2143,7 @@ button.live-badge[aria-expanded="true"]{box-shadow:var(--press),0 0 0 1px rgba(8
       const q=new URLSearchParams({rel:'0',playsinline:'1',modestbranding:'1'});
       if(c.list) q.set('list',c.list);
       if(c.start) q.set('start',String(c.start));
+      if(c.loop && c.id && !c.list){ q.set('loop','1'); q.set('playlist',c.id); }   // 한 영상 반복: playlist에 같은 ID를 넣어야 동작
       return `https://www.youtube.com/embed/${c.id||'videoseries'}?${q}`;
     }
     function watchUrl(c){
