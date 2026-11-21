@@ -1053,6 +1053,84 @@ body[data-theme="day"] .mc-nav .mc-label{background:none;border-color:transparen
 
 body[data-theme="day"] .mc-day.sun,body[data-theme="day"] .mc-wd:first-child,body[data-theme="day"] .cal-wd:first-child{color:#B04A2E}
 
+
+/* =========================================================
+   휴대폰 화면: 아래 탭으로 기능을 하나씩 크게 보여 준다
+   ========================================================= */
+.mtabs{display:none}
+@media (max-width:760px), (max-width:1099px) and (max-height:500px){
+  .app{padding-inline:12px;padding-top:calc(10px + env(safe-area-inset-top,0px));padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  /* 헤더: 한 줄로 촘촘하게 */
+  header.top{flex-wrap:nowrap;gap:8px;margin-bottom:10px;align-items:center}
+  .brand{font-size:21px;white-space:nowrap}
+  .brand small{display:none}
+  .header-actions{gap:6px;flex-wrap:nowrap;min-width:0}
+  .icon-btn{width:36px;height:36px}
+  .icon-btn svg{width:17px;height:17px}
+  #calendarBtn{display:none}            /* 달력은 '일정' 탭 안에 있어요 */
+  .clock{font-size:15px;padding:5px 9px;border-radius:11px;white-space:nowrap}
+  .clock span{display:none}
+  /* 라이브 스터디룸: 배지 한 줄만 */
+  .live-bar{padding:8px 10px;gap:8px;margin-bottom:12px;border-radius:16px;flex-wrap:nowrap}
+  .live-badge{padding:6px 12px 6px 10px;font-size:12.5px;min-width:0}
+  .live-badge > span:not(.live-dot){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .live-sum,.live-conn{display:none}
+  .live-stack{flex:1 1 auto;justify-content:flex-end;flex-basis:auto}
+  .live-stack .av{width:28px;height:28px;font-size:11px;margin-left:-8px}
+  .live-stack .av:nth-child(n+4):not(.more){display:none}
+  .live-pop{left:0;right:0;width:auto}
+  /* 한 번에 한 칸만 */
+  .grid{display:block;perspective:none}
+  .grid > .slot{display:none}
+  body[data-mtab="1"] .grid > .slot:nth-child(1),
+  body[data-mtab="2"] .grid > .slot:nth-child(2),
+  body[data-mtab="3"] .grid > .slot:nth-child(3),
+  body[data-mtab="4"] .grid > .slot:nth-child(4){display:flex;flex-direction:column;gap:12px;animation:mIn .22s ease-out}
+  @keyframes mIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .slot:hover > .panel{transform:none}
+  .grid .panel{padding:16px 16px 18px;border-radius:20px;gap:14px}
+  .panel h2 .meta{display:none}
+  /* 타이머 화면: 숫자를 크게 */
+  #timerCard .display{min-height:200px}
+  #timerCard .digits{font-size:clamp(68px,22vw,104px)}
+  #timerCard .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  #timerCard .row #startBtn{grid-column:1/-1;padding:15px;font-size:16px}
+  .alarm-row{gap:8px}
+  .alarm-row #alarmTest{margin-left:0}
+  /* 일정 화면 */
+  .todo-list{max-height:none}
+  /* 사운드 화면 */
+  .mixer{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .snd-tab{font-size:12.5px;padding:8px 4px}
+  /* 기록 화면 */
+  .week-chart{min-height:220px}
+  /* 아래 탭 막대 */
+  .mtabs{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;left:0;right:0;bottom:0;z-index:9;
+    padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));
+    background:linear-gradient(180deg,rgba(28,17,10,.86),rgba(18,10,6,.96));
+    border-top:1px solid rgba(255,236,204,.16);
+    backdrop-filter:blur(16px) saturate(130%);-webkit-backdrop-filter:blur(16px) saturate(130%);
+    box-shadow:0 -10px 30px rgba(0,0,0,.35)}
+  .mtab{appearance:none;position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px 5px;margin:0 3px;border-radius:14px;
+    border:1px solid transparent;background:transparent;color:#B8A88E;font:inherit;font-size:11.5px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+    transition:background .2s,color .2s,box-shadow .2s}
+  .mtab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .mtab[aria-pressed="true"]{color:#F7D9A8;background:linear-gradient(150deg,rgba(58,111,85,.6),rgba(27,59,43,.8));
+    border-color:rgba(242,185,107,.25);box-shadow:inset 3px 4px 8px rgba(0,0,0,.35),0 0 18px -6px rgba(90,170,125,.8)}
+  .mtab:active{transform:translateY(1px)}
+  .mbadge{position:absolute;top:2px;right:6px;font-family:var(--mono);font-size:10px;padding:1px 5px;border-radius:999px;
+    background:#2E7D32;color:#EFFFF4;box-shadow:0 0 8px rgba(63,191,127,.7)}
+  .mbadge:empty{display:none}
+  .mdot{position:absolute;top:6px;right:calc(50% - 18px);width:8px;height:8px;border-radius:50%;background:#F2B96B;box-shadow:0 0 8px #F2B96B}
+  .mdot[hidden]{display:none}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  .ios-tip{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+}
+@media (max-width:380px){
+  .brand{font-size:19px}
+  .icon-btn{width:33px;height:33px}
+  .clock{font-size:13px;padding:4px 7px}
+}
 </style>
 
 <script>try{document.body.dataset.theme=(JSON.parse(localStorage.getItem('studydesk:data')||'{}').settings||{}).theme||'day';}catch(e){document.body.dataset.theme='day';}</script>
@@ -1275,6 +1353,14 @@ body[data-theme="day"] .mc-day.sun,body[data-theme="day"] .mc-wd:first-child,bod
       <p class="note">집중 타이머가 끝나면 자동으로 한 칸씩 채워져요. 칸을 눌러 직접 기록하거나 지울 수도 있어요.</p>
     </section></div>
   </main>
+
+  <!-- 휴대폰: 아래쪽 탭으로 한 화면에 한 기능씩 -->
+  <nav class="mtabs" id="mtabs" aria-label="화면 전환">
+    <button class="mtab" data-mtab="1" aria-pressed="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9.5 2.5h5"/></svg><span class="ml">타이머</span><span class="mbadge" id="mtTimer"></span></button>
+    <button class="mtab" data-mtab="2" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="17" rx="2.5"/><path d="M8 9.5h8M8 13.5h8M8 17.5h5"/></svg><span class="ml">일정</span></button>
+    <button class="mtab" data-mtab="3" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4.5" height="6.5" rx="1.5"/><rect x="16.5" y="14" width="4.5" height="6.5" rx="1.5"/></svg><span class="ml">사운드</span><span class="mdot" id="mtSound" hidden></span></button>
+    <button class="mtab" data-mtab="4" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M5 20V11M10 20V6M15 20v-7M20 20V9"/></svg><span class="ml">기록</span></button>
+  </nav>
 </div>
 
 <!-- Modal-only cards -->
@@ -2751,6 +2837,31 @@ body[data-theme="day"] .mc-day.sun,body[data-theme="day"] .mc-wd:first-child,bod
     if(isIOS){ tip.hidden=false; return; }
   });
   document.getElementById('iosTipClose').addEventListener('click',()=>{ tip.hidden=true; });
+})();
+</script>
+
+<script>
+/* ---------- 휴대폰 아래 탭 ---------- */
+(function(){
+  const nav=document.getElementById('mtabs'); if(!nav) return;
+  const btns=[...nav.querySelectorAll('.mtab')];
+  let cur='1'; try{ cur=localStorage.getItem('chorok:mtab')||'1'; }catch(e){}
+  function show(n){
+    cur=String(n); document.body.dataset.mtab=cur;
+    btns.forEach(b=>b.setAttribute('aria-pressed', b.dataset.mtab===cur));
+    try{ localStorage.setItem('chorok:mtab',cur); }catch(e){}
+    window.scrollTo({top:0});
+  }
+  btns.forEach(b=>b.addEventListener('click',()=>show(b.dataset.mtab)));
+  show(cur);
+  // 다른 탭에 있어도 타이머 남은 시간과 사운드 재생 여부가 보이게
+  setInterval(()=>{
+    const disp=document.getElementById('display'), mm=document.getElementById('mm'), ss=document.getElementById('ss');
+    const run=disp && disp.classList.contains('running');
+    document.getElementById('mtTimer').textContent = run && cur!=='1' && mm && ss ? mm.textContent+':'+ss.textContent : '';
+    const mc=document.getElementById('musicCard');
+    document.getElementById('mtSound').hidden = !(mc && mc.classList.contains('playing') && cur!=='3');
+  },1000);
 })();
 </script>
 </body>
