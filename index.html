@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="google-site-verification" content="F8H1UWEldd5PKQh7DgY59SurJm36NUhxiAwdoUFmAyE" />
 <!-- 기본 정보 (검색 결과에 표시) -->
-<title>Study Desk - 공부 타이머 · 배경음 · 공부 기록을 한 화면에</title>
+<title>초록스탠드 | 공부 타이머 · 백색소음 · 온라인 스터디룸</title>
 <meta name="description" content="로그인 없이 바로 쓰는 공부 대시보드. 뽀모도로 집중 타이머, 백색소음 사운드 믹서, 공부량 기록, 달력, 라이브 스터디룸까지 한 화면에서.">
-<meta name="keywords" content="공부 타이머, 뽀모도로 타이머, 스터디윗미, 백색소음, 공부 기록, 집중 타이머, 온라인 스터디룸">
+<meta name="keywords" content="초록스탠드, 공부 타이머, 뽀모도로 타이머, 스터디윗미, 백색소음, 공부 기록, 집중 타이머, 온라인 스터디룸">
 <link rel="canonical" href="https://ohjutaek.github.io/my-study-dashboard/">
 
 <!-- 카카오톡 · 페이스북 · 인스타 · 디스코드 등 공유 미리보기 (Open Graph) -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Study Desk">
-<meta property="og:title" content="Study Desk - 로그인 없이 바로 쓰는 공부 대시보드">
+<meta property="og:site_name" content="초록스탠드">
+<meta property="og:title" content="초록스탠드 - 로그인 없이 바로 쓰는 공부 대시보드">
 <meta property="og:description" content="집중 타이머, 배경음, 공부량 기록, 라이브 스터디룸을 한 화면에서.">
 <meta property="og:url" content="https://ohjutaek.github.io/my-study-dashboard/">
 <meta property="og:image" content="https://ohjutaek.github.io/my-study-dashboard/og-image.png?v=2">
@@ -23,7 +23,7 @@
 
 <!-- X(트위터) 공유 미리보기 -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Study Desk - 로그인 없이 바로 쓰는 공부 대시보드">
+<meta name="twitter:title" content="초록스탠드 - 로그인 없이 바로 쓰는 공부 대시보드">
 <meta name="twitter:description" content="집중 타이머, 배경음, 공부량 기록, 라이브 스터디룸을 한 화면에서.">
 <meta name="twitter:image" content="https://ohjutaek.github.io/my-study-dashboard/og-image.png?v=2">
 
@@ -1055,7 +1055,7 @@ body[data-theme="day"] .mc-day.sun,body[data-theme="day"] .mc-wd:first-child,bod
 
 <div class="app">
   <header class="top">
-    <h1 class="brand">Study Desk<small>오늘도 한 자리에서, 한 세션씩</small></h1>
+    <h1 class="brand">초록스탠드<small>오늘도 한 자리에서, 한 세션씩</small></h1>
     <div class="header-actions">
       <button class="icon-btn" id="themeBtn" aria-label="밤 도서관으로 바꾸기" title="낮/밤 바꾸기">
         <svg class="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
@@ -1744,7 +1744,7 @@ body[data-theme="day"] .mc-day.sun,body[data-theme="day"] .mc-wd:first-child,bod
       const db=firebase.database(app);
       // 익명 로그인 (콘솔 > Authentication > 로그인 방법 > 익명 사용 설정 필요)
       let uid=null;
-      try{ if(firebase.auth){ const cred=await firebase.auth(app).signInAnonymously(); uid=cred.user.uid; } }catch(e){ console.warn('[Study Desk] 익명 로그인 실패:', e && e.message); }
+      try{ if(firebase.auth){ const cred=await firebase.auth(app).signInAnonymously(); uid=cred.user.uid; } }catch(e){ console.warn('[초록스탠드] 익명 로그인 실패:', e && e.message); }
       if(!uid){ uid='guest-'+Math.random().toString(36).slice(2,10); }
       const tab=Math.random().toString(36).slice(2,8);
       const base=`rooms/${window.FIREBASE_ROOM||'study-desk'}/users`;
@@ -1759,7 +1759,7 @@ body[data-theme="day"] .mc-day.sun,body[data-theme="day"] .mc-wd:first-child,bod
           const m=mine(), sv=firebase.database.ServerValue.TIMESTAMP;
           await fb.ref.set({name:myNick, st:m.st, endAt: m.endAt ? m.endAt+fb.offset : null, left:m.left, ses:m.ses, msg:m.msg, joinedAt:sv, lastSeen:sv});
           lastSent='';
-        }catch(e){ console.warn('[Study Desk] 접속 기록 실패 (데이터베이스 규칙을 확인하세요):', e && e.message); }
+        }catch(e){ console.warn('[초록스탠드] 접속 기록 실패 (데이터베이스 규칙을 확인하세요):', e && e.message); }
       });
       // 접속자 목록 실시간 구독
       db.ref(base).on('value',snap=>{
@@ -1768,7 +1768,7 @@ body[data-theme="day"] .mc-day.sun,body[data-theme="day"] .mc-wd:first-child,bod
           .filter(([k,v])=>v && typeof v==='object' && (typeof v.lastSeen!=='number' || now-v.lastSeen<STALE_MS))
           .map(([k,v])=>{ const by=k.split('_')[0]; return {peer:k, by, isMe: by===fb.uid, guest:false, r:read(v,fb.offset)}; });
         paint();
-      },e=>{ console.warn('[Study Desk] 접속자 목록 읽기 실패:', e && e.message); live=false; paint(); });
+      },e=>{ console.warn('[초록스탠드] 접속자 목록 읽기 실패:', e && e.message); live=false; paint(); });
       setInterval(()=>{ if(live) fb.ref.update({lastSeen:firebase.database.ServerValue.TIMESTAMP}).catch(()=>{}); },60000);   // 살아 있음 신호
       addEventListener('pagehide',()=>{ try{ fb.ref.remove(); }catch(e){} });                                               // 탭 닫을 때 즉시 삭제 시도
     }
@@ -1786,7 +1786,7 @@ body[data-theme="day"] .mc-day.sun,body[data-theme="day"] .mc-wd:first-child,bod
       push(true);
     }
 
-    if(firebaseReady()) startFirebase().catch(e=>{ console.warn('[Study Desk] Firebase 시작 실패:', e && e.message); backend='none'; live=false; paint(); });
+    if(firebaseReady()) startFirebase().catch(e=>{ console.warn('[초록스탠드] Firebase 시작 실패:', e && e.message); backend='none'; live=false; paint(); });
     else startRoom();
   })();
 
